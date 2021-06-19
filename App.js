@@ -7,106 +7,91 @@
  */
 
 import React from 'react';
-
 import {
-  SafeAreaView,
-  ScrollView,
+  Animated,
+  Dimensions,
+  Image,
+  FlatList,
   StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
   View,
+  StyleSheet,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import {data} from './src/data';
 
-const Section = ({children, title}) => {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-};
+const {width} = Dimensions.get('window');
+
+const imageW = width * 0.7;
+const imageH = imageW * 1.54;
 
 const App = () => {
-  const isDarkMode = useColorScheme() === 'dark';
+  const scrollX = React.useRef(new Animated.Value(0)).current;
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const renderItem = ({item}) => {
+    return (
+      <View
+        style={{
+          width,
+          justifyContent: 'center',
+          alignItems: 'center',
+          shadowColor: '#000',
+          shadowOpacity: 0.5,
+          shadowOffset: {width: 0, height: 0},
+          shadowRadius: 20,
+        }}>
+        <Image
+          source={{uri: item}}
+          style={{
+            width: imageW,
+            height: imageH,
+            resizeMode: 'cover',
+            borderRadius: 16,
+          }}
+        />
+      </View>
+    );
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.js</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <View style={{flex: 1, backgroundColor: '#000'}}>
+      <StatusBar hidden />
+      <View style={StyleSheet.absoluteFillObject}>
+        {data.map((image, index) => {
+          const inputRange = [
+            (index - 1) * width, // Next
+            index * width, // Current
+            (index + 1) * width, // Previous
+          ];
+
+          const opacity = scrollX.interpolate({
+            inputRange,
+            outputRange: [0, 1, 0],
+          });
+
+          return (
+            <Animated.Image
+              key={`image-${index}`}
+              source={{uri: image}}
+              style={[StyleSheet.absoluteFillObject, {opacity}]}
+              blurRadius={50}
+            />
+          );
+        })}
+      </View>
+
+      <Animated.FlatList
+        onScroll={Animated.event(
+          [{nativeEvent: {contentOffset: {x: scrollX}}}],
+          {useNativeDriver: true},
+        )}
+        data={data}
+        keyExtractor={(_, index) => index.toString()}
+        horizontal
+        pagingEnabled
+        renderItem={renderItem}
+      />
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
 
 export default App;
